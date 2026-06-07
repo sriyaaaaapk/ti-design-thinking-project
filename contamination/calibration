@@ -1,0 +1,19 @@
+#define AMBIENT_PIN  A0
+#define SURFACE_PIN  A1
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Ambient | Surface | Ratio");
+}
+
+void loop() {
+  int ambient = 1023 - analogRead(AMBIENT_PIN);
+  int surface = 1023 - analogRead(SURFACE_PIN);
+  float ratio = (float)surface / (float)ambient;
+
+  Serial.print(ambient);   Serial.print("    | ");
+  Serial.print(surface);   Serial.print("    | ");
+  Serial.println(ratio, 3);
+
+  delay(1000);
+}
