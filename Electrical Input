@@ -1,0 +1,98 @@
+#include <Wire.h>
+#include <Adafruit_INA219.h>
+
+Adafruit_INA219 ina219;
+
+const float REFERENCE_POWER = 36.0;
+const float THRESHOLD_PERCENT = 15.0;
+
+const int CLEANING_TRIGGER_PIN = 8;
+
+const unsigned long CLEANING_TIME = 5000;
+
+bool cleaningDone = false;
+
+void setup()
+{
+    Serial.begin(9600);
+
+    if (!ina219.begin())
+    {
+        Serial.println("INA219 not found");
+        while (1);
+    }
+
+    pinMode(CLEANING_TRIGGER_PIN, OUTPUT);
+
+    digitalWrite(CLEANING_TRIGGER_PIN, LOW);
+
+    Serial.println("Solar Panel Monitoring System Started");
+}
+
+void loop()
+{
+    float voltage = 0;
+    float current_mA = 0;
+    float current_A = 0;
+    float power = 0;
+    float degradationPercent = 0;
+
+    voltage = ina219.getBusVoltage_V();
+
+    current_mA = ina219.getCurrent_mA();
+
+    current_A = current_mA / 1000.0;
+
+    power = voltage * current_A;
+
+    degradationPercent =
+        ((REFERENCE_POWER - power)
+         / REFERENCE_POWER) * 100.0;
+
+    degradationPercent =
+        max(0.0f, degradationPercent);
+
+    Serial.print("Voltage: ");
+    Serial.print(voltage);
+    Serial.println(" V");
+
+    Serial.print("Current: ");
+    Serial.print(current_A);
+    Serial.println(" A");
+
+    Serial.print("Power: ");
+    Serial.print(power);
+    Serial.println(" W");
+
+    Serial.print("Performance Degradation: ");
+    Serial.print(degradationPercent);
+    Serial.println(" %");
+
+    if ((degradationPercent > THRESHOLD_PERCENT)
+        && (cleaningDone == false))
+    {
+        Serial.println("PANEL DIRTY");
+        Serial.println("START CLEANING");
+
+        digitalWrite(CLEANING_TRIGGER_PIN, HIGH);
+
+        delay(CLEANING_TIME);
+
+        digitalWrite(CLEANING_TRIGGER_PIN, LOW);
+
+        cleaningDone = true;
+
+        Serial.println("CLEANING COMPLETED");
+    }
+
+    else if (degradationPercent <= THRESHOLD_PERCENT)
+    {
+        cleaningDone = false;
+
+        Serial.println("PANEL CLEAN");
+    }
+
+    Serial.println("----------------------------");
+
+    delay(1000);
+}
