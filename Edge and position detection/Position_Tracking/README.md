@@ -142,10 +142,6 @@ Purpose:
 
 #### IR Sensors
 
-Front Edge:
-
-- Front Left
-- Front Right
 
 Left Side:
 
@@ -157,6 +153,7 @@ Right Side:
 - Right Front
 - Right Rear
 
+optional but improves accuracy : 1 sensor and front,one sensor at back palced at bottom
 #### Wheel Encoders
 
 - Left Wheel Encoder
