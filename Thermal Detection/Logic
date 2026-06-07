@@ -1,0 +1,151 @@
+# Thermal Detection — Logic
+
+## Overview
+
+This module handles **health monitoring** of the solar panel using two sensors:
+- **MLX90614** — non-contact infrared thermometer (detects cell damage via hotspot)
+- **LDR** — light dependent resistor (detects dirt/dust/dropping via reflected light)
+
+These two sensors together answer two different questions:
+- Is the panel **dirty**? → LDR
+- Is the panel **damaged**? → MLX90614
+
+---
+
+## Sensor 1 — LDR (Dirt Detection)
+
+### How it works
+
+The LDR sits on the robot facing downward toward the panel surface.
+
+Clean panel → reflects light strongly → LDR reads HIGH value  
+Dirty panel → dirt absorbs/scatters light → LDR reads LOW value
+
+### Why ratio and not raw value
+
+Raw LDR values change with weather (sunny vs cloudy).  
+To make detection weather-independent, we calculate:
+
+```
+ldrRatio = ldrRaw / 1023.0
+```
+
+This ratio stays consistent regardless of ambient lighting conditions.  
+A drop in ratio means dirt — not a change in weather.
+
+### Threshold
+
+```
+ldrRatio < 0.60  →  DIRTY — trigger cleaning
+```
+
+Threshold is set after physical calibration on a clean panel.
+
+---
+
+## Sensor 2 — MLX90614 (Cell Damage Detection)
+
+### How it works
+
+MLX90614 is a non-contact infrared thermometer.  
+It reads panel surface temperature WITHOUT touching the panel.  
+The robot moves across the panel and scans temperature at every point.
+
+### Why not use raw temperature
+
+Raw temperature changes with weather:
+- Sunny day → panel at 55°C
+- Cloudy day → panel at 28°C
+
+A fixed threshold would cause false alarms on cloudy days.
+
+### Solution — tempDiff (relative measurement)
+
+Instead of raw temperature, we use:
+
+```
+tempDiff = objectTemp - ambientTemp
+```
+
+This is the difference between panel surface and surrounding air temperature.  
+This difference stays meaningful regardless of weather conditions.
+
+| Condition | objectTemp | ambientTemp | tempDiff |
+|---|---|---|---|
+| Sunny, normal cell | 55°C | 35°C | 20°C |
+| Cloudy, normal cell | 28°C | 25°C | 3°C |
+| Sunny, damaged cell | 73°C | 35°C | 38°C |
+| Cloudy, damaged cell | 46°C | 25°C | 21°C |
+
+A damaged cell always shows tempDiff **significantly higher** than neighbours — regardless of weather.
+
+### Why NOT use cool spot detection
+
+A cool spot (dropping blocking sunlight) causes low tempDiff.  
+But on a cloudy day, the whole panel has low tempDiff naturally.  
+This causes false alarms — cleaning triggered when panel is actually clean.  
+Therefore, **cool spot detection via MLX is intentionally removed.**  
+LDR handles dirt detection instead (reliable in all weather).
+
+### Threshold
+
+```
+tempDiff > (neighbour average + 15°C)  →  HOTSPOT → cell damage alert
+```
+
+15°C above neighbours is the threshold — based on standard hotspot research.
+
+---
+
+## Decision Logic
+
+```
+Robot moving across panel →
+
+Every 1 second:
+    Read ldrRatio
+    Read tempDiff (objectTemp - ambientTemp)
+
+    IF ldrRatio < 0.60:
+        → DIRT DETECTED
+        → Stop robot
+        → Trigger cleaning system
+        → After cleaning, re-read LDR
+        → If recovered → resume moving
+        → If not recovered → send alert (stubborn dirt)
+
+    ELSE IF tempDiff > (neighbour + 15°C):
+        → HOTSPOT DETECTED (cell damage)
+        → Stop robot
+        → Log position
+        → Send WiFi alert to owner
+        → Resume moving (cleaning cannot fix damage)
+
+    ELSE:
+        → NORMAL
+        → Keep moving
+```
+
+---
+
+## Why these two sensors together
+
+| Sensor | Detects | Method | Weather dependent? |
+|---|---|---|---|
+| LDR | Dirt / dust / dropping | Reflected light ratio drops | NO — ratio compensates |
+| MLX90614 | Cell damage (hotspot) | tempDiff spikes vs neighbours | NO — relative measure |
+
+LDR answers: **is the surface dirty?**  
+MLX answers: **is the panel internally damaged?**  
+Together they give complete panel health information.
+
+---
+
+## Calibration
+
+Run `calibration` file first before using this sensing logic.  
+Observe serial monitor output and set:
+- `LDR_DIRTY_RATIO` — midpoint between clean and dirty LDR ratio readings
+- `HOTSPOT_DIFF` — based on tempDiff observed during normal operation (add 15°C to that)
+
+Recalibrate if panel location, season, or panel brand changes.
