@@ -8,7 +8,7 @@ const float THRESHOLD_PERCENT = 15.0;
 
 const int CLEANING_TRIGGER_PIN = 8;
 
-const unsigned long CLEANING_TIME = 5000;
+const unsigned long CLEANING_TIME = 20000;
 
 bool cleaningDone = false;
 
@@ -71,8 +71,8 @@ void loop()
     if ((degradationPercent > THRESHOLD_PERCENT)
         && (cleaningDone == false))
     {
-        Serial.println("PANEL DIRTY");
-        Serial.println("START CLEANING");
+        Serial.println("CONTAMINATION DETECTED");
+        Serial.println("START CLEANING CYCLE");
 
         digitalWrite(CLEANING_TRIGGER_PIN, HIGH);
 
@@ -82,17 +82,17 @@ void loop()
 
         cleaningDone = true;
 
-        Serial.println("CLEANING COMPLETED");
+        Serial.println("CLEANING CYCLE COMPLETED");
     }
 
     else if (degradationPercent <= THRESHOLD_PERCENT)
     {
         cleaningDone = false;
 
-        Serial.println("PANEL CLEAN");
+        Serial.println("NO CONTAMINATION DETECTED");
     }
 
     Serial.println("----------------------------");
 
-    delay(1000);
+    delay(5000);
 }
