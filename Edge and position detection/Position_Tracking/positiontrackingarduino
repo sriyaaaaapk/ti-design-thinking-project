@@ -1,0 +1,106 @@
+#include <stdio.h>
+
+#define PI 3.14159
+
+int main()
+{
+    float panelLength;
+    float panelWidth;
+    float stripWidth;
+
+    float wheelDiameter;
+    int ppr;
+
+    printf("Enter Solar Panel Length (cm): ");
+    scanf("%f",&panelLength);
+
+    printf("Enter Solar Panel Width (cm): ");
+    scanf("%f",&panelWidth);
+
+    printf("Enter Cleaning Strip Width (cm): ");
+    scanf("%f",&stripWidth);
+
+    printf("Enter Wheel Diameter (cm): ");
+    scanf("%f",&wheelDiameter);
+
+    printf("Enter Encoder PPR: ");
+    scanf("%d",&ppr);
+
+    float circumference = PI * wheelDiameter;
+
+    float distancePerPulse =
+            circumference / ppr;
+
+    int totalStrips =
+            (int)(panelWidth / stripWidth);
+
+    float x = 0;
+    float y = 0;
+
+    int direction = 1;
+
+    printf("\nDistance Per Pulse = %.3f cm\n",
+            distancePerPulse);
+
+    for(int strip=1; strip<=totalStrips; strip++)
+    {
+        printf("\n====================\n");
+        printf("STRIP %d\n",strip);
+        printf("====================\n");
+
+        long encoderCount = 0;
+
+        float distanceTravelled = 0;
+
+        while(distanceTravelled < panelLength)
+        {
+            encoderCount++;
+
+            distanceTravelled =
+                encoderCount *
+                distancePerPulse;
+
+            if(distanceTravelled > panelLength)
+                distanceTravelled = panelLength;
+
+            if(direction == 1)
+            {
+                x = distanceTravelled;
+            }
+            else
+            {
+                x = panelLength -
+                    distanceTravelled;
+            }
+
+            printf("Encoder=%ld  ",
+                    encoderCount);
+
+            printf("X=%.2f cm  ",
+                    x);
+
+            printf("Y=%.2f cm\n",
+                    y);
+        }
+
+        printf("\nEdge Detected\n");
+        printf("Stopping Robot\n");
+
+        y += stripWidth;
+
+        if(y > panelWidth)
+            y = panelWidth;
+
+        printf("Shifting To Next Strip\n");
+
+        printf("New Position: ");
+        printf("X=%.2f  Y=%.2f\n",
+                x,y);
+
+        direction *= -1;
+    }
+
+    printf("\n\nCleaning Complete\n");
+
+    return 0;
+}
