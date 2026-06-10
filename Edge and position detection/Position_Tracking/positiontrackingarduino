@@ -29,7 +29,7 @@ int main()
     float circumference = PI * wheelDiameter;
 
     float distancePerPulse =
-            circumference / ppr;
+            circumference / ppr; // ppr=pulse per rotaion, circumeference= distance per revolution
 
     int totalStrips =
             (int)(panelWidth / stripWidth);
