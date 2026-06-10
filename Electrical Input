@@ -33,7 +33,6 @@ void loop()
 {
     float voltage = 0;
     float current_mA = 0;
-    float current_A = 0;
     float power = 0;
     float degradationPercent = 0;
 
@@ -41,9 +40,7 @@ void loop()
 
     current_mA = ina219.getCurrent_mA();
 
-    current_A = current_mA / 1000.0;
-
-    power = voltage * current_A;
+    power = ina219.getPower_mW()/1000.0;
 
     degradationPercent =
         ((REFERENCE_POWER - power)
@@ -57,8 +54,8 @@ void loop()
     Serial.println(" V");
 
     Serial.print("Current: ");
-    Serial.print(current_A);
-    Serial.println(" A");
+    Serial.print(current_mA);
+    Serial.println(" mA");
 
     Serial.print("Power: ");
     Serial.print(power);
